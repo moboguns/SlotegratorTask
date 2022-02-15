@@ -1,0 +1,56 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "io.freefair.gradle:lombok-plugin:6.4.0"
+    }
+}
+
+plugins {
+    id 'java'
+    id "io.freefair.lombok" version "6.4.0"
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.testng:testng:7.5'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.1.2'
+    testImplementation 'io.cucumber:cucumber-java:7.0.0'
+    testImplementation 'io.rest-assured:rest-assured:3.0.0'
+    implementation 'com.google.code.gson:gson:2.7'
+    implementation'io.cucumber:cucumber-testng:5.0.0'
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+apply plugin: "io.freefair.lombok"
+
+task cucumber() {
+    dependsOn assemble, testClasses
+    [compileJava, compileTestJava]*.options.collect { options -> options.encoding = 'UTF-8' }
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty','--glue', 'stepdef', 'src/test/resources/features', "--tags", "@login"]
+        }
+    }
+}
+
+test {
+    useTestNG()
+    options.suites("src/test/resources/apitests.xml")
+}
